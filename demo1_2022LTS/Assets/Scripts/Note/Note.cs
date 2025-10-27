@@ -2,14 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Note : MonoBehaviour
+public class Note11 : MonoBehaviour
 {
     public Vector2 direction;
     public float spawnDistance;
     public float moveDuration;
     public float TargetTime; 
 
-    private Vector2 center = Vector2.zero; // ¹w³]¥ý©¹µe­±¤¤¤ß
+    private Vector2 center = Vector2.zero; // ï¿½wï¿½]ï¿½ï¿½ï¿½ï¿½ï¿½eï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 
     void Update()
