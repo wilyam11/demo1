@@ -52,3 +52,6 @@ sysinfo.txt
 
 # Gradle
 .gradle/
+
+# TextMesh Pro
+/Assets/TextMesh Pro/
