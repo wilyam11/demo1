@@ -2,7 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+<<<<<<< Updated upstream
 public class Note : MonoBehaviour
+=======
+public class Note1 : MonoBehaviour
+>>>>>>> Stashed changes
 {
     public Vector2 direction;
     public float spawnDistance;
@@ -24,13 +28,13 @@ public class Note : MonoBehaviour
         }
 
         double bgmElapsed = AudioManager.Instance.BgmProgressDSP;
-
+        Debug.Log(moveDuration);
         float t = Mathf.Clamp01(1f - ((float)bgmElapsed - (TargetTime - moveDuration)) / moveDuration);
         Debug.Log(t);
-
         float currentDistance = spawnDistance * t;
-
+        Debug.Log(currentDistance);
         Vector2 newPos = center + direction * currentDistance;
+        Debug.Log(newPos);
         transform.position = new Vector3(newPos.x, newPos.y, 0f);
         if (t <= 0f)
         {

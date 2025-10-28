@@ -16,13 +16,13 @@ public class NoteManager : MonoBehaviour
 
         foreach (var noteData in notes)
         {
-            float angleRad = noteData.x * Mathf.Deg2Rad;
+            float angleRad = noteData.x*8 * Mathf.Deg2Rad;
             Vector2 dir = new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
             Vector3 spawnPosition = Vector2.zero + dir * spawnRadius;
 
             GameObject noteObj = Instantiate(notePrefab, spawnPosition, Quaternion.identity, this.transform);
 
-            var noteScript = noteObj.GetComponent<Note>();
+            var noteScript = noteObj.GetComponent<Note1>();
             if (noteScript != null)
             {
                 noteScript.direction = dir;
