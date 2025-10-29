@@ -22,7 +22,7 @@ public class NoteManager : MonoBehaviour
 
             GameObject noteObj = Instantiate(notePrefab, spawnPosition, Quaternion.identity, this.transform);
 
-            var noteScript = noteObj.GetComponent<Note>();
+            var noteScript = noteObj.GetComponent<Note11>();
             if (noteScript != null)
             {
                 noteScript.direction = dir;
