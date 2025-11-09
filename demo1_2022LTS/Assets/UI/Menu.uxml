@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd">
+    <ui:VisualElement name="MainArea" style="flex-grow: 1; justify-content: center; align-items: center;">
+        <ui:Button text="Start" parse-escape-sequences="true" display-tooltip-when-elided="true" name="StartBtn" />
+        <ui:Button text="Setting" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SettingBtn" />
+    </ui:VisualElement>
+</ui:UXML>

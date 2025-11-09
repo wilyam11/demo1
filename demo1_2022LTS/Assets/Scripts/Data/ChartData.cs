@@ -7,8 +7,10 @@ using UnityEngine;
 [Serializable]
 public class NoteData
 {
-    public float x;
-    public float y;
+    public float s;     // Start
+    public float e;     // End
+    public int t;       // Track
+    public int i;       // Type : 0-Press, 1-Hold
 }
 
 [Serializable]
@@ -17,10 +19,8 @@ public class ChartData
     public string title;
     public string artist;
     public string path;
-    public int speed;
+    public int track;
     public float bpm;
-    public float start_time;
-    public float delay;
     public NoteData[] notes;
 }
 

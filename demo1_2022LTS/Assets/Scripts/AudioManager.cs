@@ -55,7 +55,7 @@ public class AudioManager : MonoBehaviour
 
     public AudioClip LoadClip(string file)
     {
-        AudioClip clip = ResourceManager.Instance.Load<AudioClip>(Path.Combine("Songs", file));
+        AudioClip clip = ResourceManager.Load<AudioClip>(Path.Combine("Songs", file));
         if (clip == null)
         {
             Debug.LogError($"Can't load audio clip: {file}");
@@ -100,6 +100,14 @@ public class AudioManager : MonoBehaviour
         {
             bgmSource.Pause();
             isBgmPlaying = false;
+        }
+    }
+
+    public void ResetBGM()
+    {
+        if (bgmSource != null && isBgmPlaying)
+        {
+            bgmSource.time = 0f;
         }
     }
 
