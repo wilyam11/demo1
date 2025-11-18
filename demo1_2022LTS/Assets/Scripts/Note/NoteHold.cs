@@ -1,152 +1,153 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
+using System.Linq;
 using UnityEngine;
 
-
-public class NoteHold : MonoBehaviour
+public class NoteHold : MonoBehaviour, INoteObject
 {
-    private enum NoteState
+    private Vector2 unitDirVector;
+    private Note note;
+
+    //private float startRadius;
+    private float targetRadius;
+    private float slope;
+    private float posOffset;
+
+    private SpriteRenderer holdPartRender;
+    private Transform holdPartTransform;
+
+    public void Initialize(Note note, Vector2 dir, float startRadius, float targetRadius)
     {
-        Waiting,
-        ActivateF,
-        ActivateB,
-        Pressing,
-        Death,
-        Finish
+        this.note = note;
+        unitDirVector = dir.normalized;
+        //this.startRadius = startRadius;
+        this.targetRadius = targetRadius;
+        slope = (startRadius - targetRadius) / note.TravelingTime;
+
+        //posOffset = transform.localScale.x * 0.5f;
+        posOffset = 0f;
+
+        float _holdScale = slope * note.HoldTime / transform.localScale.x;
+        float _holdPosOffset = 0.5f + _holdScale / 2f;
+        holdPartRender = transform.GetChild(0).GetComponent<SpriteRenderer>();
+        holdPartTransform = transform.GetChild(0);
+        holdPartTransform.localScale = new Vector3(_holdScale, 1f, 1f);
+        holdPartTransform.localPosition = new Vector3(_holdPosOffset, 0f, 0f);
+
+        UpdatePos();
     }
 
-    public Vector2 UnitDirectionVector;
-    public float StartPointRadius;
-    public float TargetPointRadius;
-    public float DurationMoveTime;     // 每秒走幾拍的距離
-    public float DeathMoveTime;
-    public float RequiredHoldTime;
-    public float TargetTime;
-    public int TargetTrackIndex;
-
-
-    private NoteState state;
-    private KeyCode HoldKey;
-
-    private void Start()
+    private void Update()
     {
-        DeathMoveTime = DurationMoveTime * TargetPointRadius / (StartPointRadius - TargetPointRadius);
-        state = NoteState.Waiting;
-    }
-
-    void Update()
-    {
-        // Check
-        if (AudioManager.Instance.BgmProgressDSP <= 0)
+        if (note == null)
+        {
+            return;
+        }
+        if (Level.Instance.State != LevelState.Playing)
         {
             return;
         }
 
-        // Baisc Movement Calculation
-        //float _curTimeClamp = Mathf.Clamp01(1f - ((float)AudioManager.Instance.BgmProgressDSP - (TargetTime - DurationMoveTime)) / DurationMoveTime);
-        //float _curTimeDis = _curTimeClamp * DurationMoveTime;
-        //float _curDis = TargetPointRadius + (StartPointRadius - TargetPointRadius)* _curTimeClamp;
+        UpdatePos();
+    }
 
-        float tStart = TargetTime - DurationMoveTime;
-        float tEnd = TargetTime + DeathMoveTime;
-        float tNow = (float)AudioManager.Instance.BgmProgressDSP;
-        float _curTimeClamp = Mathf.Clamp01(1f - (tNow - tStart) / (tEnd - tStart));
-        float _curTimeDis = _curTimeClamp * (DurationMoveTime + DeathMoveTime) - DeathMoveTime;
-        float _curDis = StartPointRadius * _curTimeClamp;
-
-
-        // State Machine
-        bool repeat = true;
-        while (repeat)
-        {
-            repeat = false;
-            switch (state)
-            {
-                case NoteState.Waiting:
-                    if (_curTimeDis < Level.Instance.Beat_1_4)
-                    {
-                        GetComponent<SpriteRenderer>().color = Color.yellow;
-                        state = NoteState.ActivateF;
-                        repeat = true;
-                    }
-                    break;
-                case NoteState.ActivateF:
-                    if (_curTimeDis < 0)
-                    {
-                        state = NoteState.ActivateB;
-                        DetectLine _dl =  Level.Instance.GetDetectLine(TargetTrackIndex);
-                        if(_dl != null)
-                        {
-                            _dl.StartCoroutine(_dl.Grow(new Vector2(1.1f, 1.5f), 0.3f));
-                        }
-                    }
-
-                    // Hit
-                    if (Input.anyKeyDown & Level.Instance.MouseCurrentTrack == TargetTrackIndex)
-                    {
-                        FindFirstObjectByType<Cross>().PlayScaleEffect();
-                        GetComponent<SpriteRenderer>().color = Color.green;
-                        Level.Instance.GamePlay.ShowOffset(_curTimeDis);
-                        state = NoteState.Pressing;
-                    }
-                    break;
-                case NoteState.ActivateB:
-                    // Miss
-                    if(_curTimeDis <= -Level.Instance.Beat_1_8)
-                    {
-                        GetComponent<SpriteRenderer>().color = Color.red;
-                        state = NoteState.Death;
-                    }
-
-                    // Hit
-                    if (Input.anyKeyDown & Level.Instance.MouseCurrentTrack == TargetTrackIndex)
-                    {
-                        FindFirstObjectByType<Cross>().PlayScaleEffect();
-                        GetComponent<SpriteRenderer>().color = Color.green;
-                        Level.Instance.GamePlay.ShowOffset(_curTimeDis);
-                        state = NoteState.Pressing;
-                    }
-                    break;
-                case NoteState.Pressing:
-                    if(!Input.GetKeyDown(HoldKey))
-                    {
-                        state = NoteState.Death;
-                    }
-                    else
-                    {
-                        if(_curTimeDis <= -RequiredHoldTime)
-                        {
-                            Level.Instance.HitPerfect();
-                            state = NoteState.Finish;
-                        }
-                    }
-                    break;
-                case NoteState.Death:
-                    if (_curTimeDis <= TargetPointRadius / (TargetPointRadius - StartPointRadius))
-                    {
-                        state = NoteState.Finish;
-                        Level.Instance.GamePlay.ShowOffset(_curTimeDis);
-                    }
-                    break;
-                case NoteState.Finish:
-                    Color _c = GetComponent<SpriteRenderer>().color;
-                    _c.a *= 0.95f;
-                    if (_c.a < 0.1f)
-                    {
-                        Destroy(gameObject);
-                    }
-                    GetComponent<SpriteRenderer>().color = _c;
-                    break;
-            }
-        }
-
-        // Move
-        //Vector2 _newPos = UnitDirectionVector * _curDis;
-        //transform.position = new Vector3(_newPos.x, _newPos.y, 0f);
-
-        float noteLength = GetComponent<SpriteRenderer>().bounds.size.x;
-        Vector2 _newPos = UnitDirectionVector * (_curDis + noteLength * 0.5f);
+    public void UpdatePos()
+    {
+        float _curDistanceDis = targetRadius + slope * note.CurrentTimeDis;
+        Vector2 _newPos = unitDirVector * (_curDistanceDis + posOffset);
         transform.position = new Vector3(_newPos.x, _newPos.y, 0f);
     }
+
+    public void Waiting()
+    {
+        KeyCode[] _curHitKeys = InputManager.Instance.GetCurrentHitKey();
+        bool _isKeyDown = (_curHitKeys.Length > 0) && Level.Instance.MouseCurrentTrack == note.TrackIndex;
+
+        Judgment _jdg = Level.Instance.JudgementData.Judge(note.CurrentTimeDis);
+        if (_jdg == Judgment.Miss)
+        {
+            note.State = NoteState.Finish;
+            GetComponent<SpriteRenderer>().color = Color.red;
+            holdPartRender.color += Color.red;
+            Level.Instance.Hit(_jdg, note.CurrentTimeDis);
+            return;
+        }
+
+        if (_isKeyDown)
+        {
+            if (_jdg == Judgment.Perfect)
+            {
+                note.State = NoteState.Hit;
+                note.HitKey = _curHitKeys[0];
+                GetComponent<SpriteRenderer>().color = Color.blue;
+                holdPartRender.color += Color.yellow;
+                Level.Instance.Hit(_jdg, note.CurrentTimeDis);
+            }
+            else if (_jdg == Judgment.Good)
+            {
+                note.State = NoteState.Hit;
+                note.HitKey = _curHitKeys[0];
+                GetComponent<SpriteRenderer>().color = Color.green;
+                holdPartRender.color += Color.yellow;
+                Level.Instance.Hit(_jdg, note.CurrentTimeDis);
+            }
+        }
+    }
+
+    public void Hit()
+    {
+        // 提早 or 晚一點放
+        if (!InputManager.Instance.IsKeyDown(note.HitKey))
+        {
+            Judgment _jdg = Level.Instance.JudgementData.Judge(note.CurrentTimeDis + note.HoldTime);
+            if (_jdg == Judgment.Perfect)
+            {
+                FindAnyObjectByType<Cross>().PlayScaleEffect();
+                note.State = NoteState.Finish;
+                holdPartRender.color += Color.blue;
+                Level.Instance.Hit(_jdg, note.CurrentTimeDis);
+            }
+            else if (_jdg == Judgment.Good)
+            {
+                FindAnyObjectByType<Cross>().PlayScaleEffect();
+                note.State = NoteState.Finish;
+                holdPartRender.color += Color.green;
+                Level.Instance.Hit(_jdg, note.CurrentTimeDis);
+            }
+            else
+            {
+                FindAnyObjectByType<Cross>().PlayScaleEffect();
+                note.State = NoteState.Finish;
+                holdPartRender.color += Color.red;
+                Level.Instance.Hit(_jdg, note.CurrentTimeDis);
+            }
+
+            return;
+        }
+
+        // 壓到最後
+        if(note.CurrentTimeDis <= -note.HoldTime)
+        {
+            FindAnyObjectByType<Cross>().PlayScaleEffect();
+            note.State = NoteState.Finish;
+            holdPartRender.color += Color.blue;
+            Level.Instance.Hit(Judgment.Perfect, note.CurrentTimeDis);
+        }
+    }
+
+    public void Finish()
+    {
+        note.State = NoteState.Death;
+    }
+
+    public void Death()
+    {
+
+    }
+
+    public void DestroySelf()
+    {
+        Destroy(gameObject);
+    }
+
 }

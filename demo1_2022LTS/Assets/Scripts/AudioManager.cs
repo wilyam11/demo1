@@ -23,12 +23,13 @@ public class AudioManager : MonoBehaviour
     [Header("BGM")]
     [SerializeField] private AudioSource bgmSource;
     private double bgmStartDspTime;
+    private float pauseTime = 0f;
     private bool isBgmPlaying = false;
 
     [Header("SFX")]
     public Sound[] sounds;
 
-    public double BgmProgressDSP => isBgmPlaying ? AudioSettings.dspTime - bgmStartDspTime : 0.0;
+    public double BgmProgressDSP => AudioSettings.dspTime - bgmStartDspTime;
 
     void Awake()
     {
@@ -79,10 +80,12 @@ public class AudioManager : MonoBehaviour
     public void PlayBGM(double delay = 0f)
     {
         if (bgmSource == null || bgmSource.clip == null) return;
+        bgmSource.Stop();
         double startTime = AudioSettings.dspTime + delay;
-        bgmSource.PlayScheduled(startTime);
         bgmStartDspTime = startTime;
         isBgmPlaying = true;
+        Debug.Log($"Play at : {BgmProgressDSP}");
+        bgmSource.PlayScheduled(startTime);
     }
 
     public void StopBGM()
@@ -99,7 +102,9 @@ public class AudioManager : MonoBehaviour
         if (bgmSource != null && isBgmPlaying)
         {
             bgmSource.Pause();
+            pauseTime = bgmSource.time;
             isBgmPlaying = false;
+            Debug.Log($"Pause at : {BgmProgressDSP}");
         }
     }
 
@@ -115,8 +120,11 @@ public class AudioManager : MonoBehaviour
     {
         if (bgmSource != null && !isBgmPlaying)
         {
-            bgmSource.UnPause();
+            bgmSource.time = pauseTime;
+            bgmSource.Play();
+            bgmStartDspTime = AudioSettings.dspTime - pauseTime;
             isBgmPlaying = true;
+            Debug.Log($"Resuming at : {BgmProgressDSP})");
         }
     }
 

@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 public enum LevelState
@@ -18,15 +20,17 @@ public class Level : MonoBehaviour
     public Vector2 MaxMaskSize = new Vector2(25f, 20f);
     public bool IsShowMask = true;
 
-    [Header("音符")]
-    public GameObject NotePref;
+    [Header("節拍線")]
+    public GameObject BeatLinePref;
 
-    [Header("軌道")]
-    public GameObject TrackLinePref;
+    [Header("音符")]
+    public GameObject NoteTapPref;
+    public GameObject NoteHoldPref;
+    public GameObject NoteContainer;
+    public float SpawnRadius = 15f;
 
     [Header("判定線")]
-    public GameObject DetectLinePref;
-    public float Scale = 1f;
+    public List<GameObject> DetectLines = new List<GameObject>();
     public float Radius = 1f;
 
     [Header("UI Control")]
@@ -34,22 +38,21 @@ public class Level : MonoBehaviour
 
     public static Level Instance { get; private set; }
     public float Score { get; private set; } = 0;
+    public int Combo { get; private set; } = 0;
     public float Perfect { get; private set; } = 10f;
-    public float Great { get; private set; } = 7f;
-    public float Beat_1_10 { get; private set; }
-    public float Beat_1_8 { get; private set; }
-    public float Beat_1_4 { get; private set; }
-    public float Beat_1_3 { get; private set; }
-    public int Track { get; private set; }
+    public float Good { get; private set; } = 7f;
     public int MouseCurrentTrack { get; private set; }
+    public JudgementData JudgementData { get; private set; }
     public LevelState State { get; private set; } = LevelState.None;
 
-    private ChartData _chartData;
+    public const int TrackCount = 6;
 
-    private List<GameObject> _tracks = new List<GameObject>();
+    private ChartData chartData;
 
-    private List<GameObject> _detects = new List<GameObject>();
+    private List<Note>[] notes = new List<Note>[TrackCount];
+    private List<Note> finishNotes = new List<Note>();
 
+    private float cusTimeOffset = 0f;
 
     public void Awake()
     {
@@ -58,6 +61,24 @@ public class Level : MonoBehaviour
 
     public void Start()
     {
+        float angleRad = 2 * Mathf.PI / TrackCount;
+        float detectLineLength = Radius * angleRad + 0.1f;
+
+        foreach (var d in DetectLines)
+        {
+            var dl = d.GetComponent<DetectLine>();
+            if (dl != null)
+            {
+                dl.SetRadius(Radius);
+                dl.SetLength(detectLineLength);
+            }
+        }
+
+        for (int i = 0; i < TrackCount; i++)
+        {
+            notes[i] = new List<Note>();
+        }
+
         GameManager.Instance.GameStart();
     }
 
@@ -76,7 +97,7 @@ public class Level : MonoBehaviour
         float angleRad = -Mathf.Atan2(mouseWorldPos.x, mouseWorldPos.y);
         if (angleRad < 0) angleRad += 2 * Mathf.PI;
 
-        MouseCurrentTrack = (int)((angleRad / (2 * Mathf.PI)) * Track);
+        MouseCurrentTrack = (int)((angleRad / (2 * Mathf.PI)) * TrackCount);
         ColoReset(MouseCurrentTrack);
 
 
@@ -86,11 +107,95 @@ public class Level : MonoBehaviour
             ShowMask(IsShowMask);
         }
 
-        if(Input.GetKeyDown(KeyCode.Escape))
+        if(Input.GetKeyDown(KeyCode.F3))
         {
             State = LevelState.None;
             GameReStart();
         }
+
+        // Finish Note 狀態更新
+        foreach (var note in finishNotes)
+        {
+            note.UpdateTime((float)AudioManager.Instance.BgmProgressDSP);
+            note.UpdateLogic();
+
+            if(note.State == NoteState.Death)
+            {
+                note.NoteObject.DestroySelf();
+            }
+        }
+        finishNotes = finishNotes.FindAll(n => n.State != NoteState.Death);
+
+        // Note 狀態更新
+        for (int i = 0; i < TrackCount; i++)
+        {
+            if(notes[i].Count == 0)
+            {
+                continue;
+            }
+
+            foreach (var note in notes[i])
+            {
+                note.UpdateTime((float)AudioManager.Instance.BgmProgressDSP);
+            }
+
+            Note _note = notes[i][0];
+            _note.UpdateLogic();
+
+            if (_note.State == NoteState.Finish)
+            {
+                notes[i].RemoveAt(0);
+                finishNotes.Add(_note);
+            }
+        }
+    }
+
+    public void Load(string chartName)
+    {
+        string _json = ResourceManager.Load<TextAsset>(Path.Combine("Charts", chartName)).text;
+        ChartData _chartData = JsonUtility.FromJson<ChartData>(_json);
+        this.chartData = _chartData;
+
+        // Note
+        SpawnNotes(_chartData.notes);
+
+        // 判定資料
+        JudgementData = new JudgementData(_chartData.bpm);
+
+        // 載入音樂
+        AudioClip audio = AudioManager.Instance.LoadClip(_chartData.path);
+        AudioManager.Instance.LoadBGM(audio);
+    }
+
+    public void GameStart()
+    {
+        GamePlay.UpdateScore(0);
+        GamePlay.UpdateCombo(0);
+        GamePlay.ShowHitOffset(0f);
+        AudioManager.Instance.PlayBGM();
+        State = LevelState.Playing;
+    }
+
+    public void GameReStart()
+    {
+        Score = 0;
+        Combo = 0;
+        AudioManager.Instance.StopBGM();
+        ClearAllNotes();
+        SpawnNotes(chartData.notes);
+        GameStart();
+    }
+
+    public void Pause()
+    {
+        AudioManager.Instance.PauseBGM();
+        State = LevelState.Pause;
+    }
+
+    public void UnPause()
+    {
+        State = LevelState.Playing;
+        AudioManager.Instance.ResumeBgm();
     }
 
     public void ShowMask(bool show)
@@ -105,121 +210,129 @@ public class Level : MonoBehaviour
         }
     }
 
-    public void HitPerfect()
+    public void Hit(Judgment judgment, float delay)
     {
-        Score += Perfect;
-        GamePlay.UpdateScore((int)Score);
-    }
-
-    public void HitGreat()
-    {
-        Score += Great;
-        GamePlay.UpdateScore((int)Score);
-    }
-
-    public void SpawnNotes(NoteData[] notes)
-    {
-        float spawnRadius = 15f;
-
-        foreach (var noteData in notes)
+        switch(judgment)
         {
-            float angleRad = (90f + 60f * (noteData.t + 0.5f)) * Mathf.Deg2Rad;
-            Vector2 dir = new Vector2(Mathf.Cos(angleRad), Mathf.Sin(angleRad));
-            Vector3 spawnPosition = dir * spawnRadius;
-
-            if(noteData.i == 0)
-            {
-
-            }
-
-            GameObject noteObj = Instantiate(NotePref, spawnPosition, Quaternion.identity, this.transform);
-            noteObj.transform.rotation = Quaternion.Euler(0f, 0f, angleRad * Mathf.Rad2Deg);
-
-            var noteScript = noteObj.GetComponent<NotePress>();
-            if (noteScript != null)
-            {
-                noteScript.UnitDirectionVector = dir;
-                noteScript.StartPointRadius = spawnRadius;
-                noteScript.TargetPointRadius = Radius;
-                noteScript.DurationMoveTime = 8f;
-                noteScript.DeathMoveTime = 1f;
-                noteScript.TargetTime = noteData.s - 0.16f;
-                noteScript.TargetTrackIndex = noteData.t;
-                //noteScript.TargetTrackIndex = 0;        // 測試用
-            }
+            case Judgment.Perfect:
+                Combo++;
+                GamePlay.UpdateCombo(Combo);
+                Score += Perfect;
+                GamePlay.UpdateScore((int)Score);
+                GamePlay.ShowHitOffset(delay);
+                break;
+            case Judgment.Good:
+                Combo++;
+                GamePlay.UpdateCombo(Combo);
+                Score += Good;
+                GamePlay.UpdateScore((int)Score);
+                GamePlay.ShowHitOffset(delay);
+                break;
+            case Judgment.Miss:
+                Combo = 0;
+                GamePlay.UpdateCombo(Combo);
+                GamePlay.ShowHitOffset(delay);
+                break;
         }
     }
 
-    public void Load(string chartName)
+    public void SpawnNotes(NoteData[] noteDataList)
     {
-        string _json = ResourceManager.Load<TextAsset>(Path.Combine("Charts", chartName)).text;
-        ChartData _chartData = JsonUtility.FromJson<ChartData>(_json);
-        this._chartData = _chartData;
+        float _trackAngle = 360f / TrackCount;
+        float _travelingTime = 12f;
 
-        // 基本數值
-        Track = _chartData.track;
-        Beat_1_10 = 6f / _chartData.bpm;
-        Beat_1_8 = 7.5f / _chartData.bpm;
-        Beat_1_4 = 15f / _chartData.bpm;
-        Beat_1_3 = 20f / _chartData.bpm;
+        foreach (var noteData in noteDataList)
+        {
+            int _index = noteData.t;
+            float _angleRad = (90f + _trackAngle * (noteData.t + 0.5f)) * Mathf.Deg2Rad;
+            Vector2 _dir = new Vector2(Mathf.Cos(_angleRad), Mathf.Sin(_angleRad));
+            Vector3 _spawnPos = _dir * SpawnRadius;
 
-        // Note
-        SpawnNotes(_chartData.notes);
+            // 基底 Note 類別
+            Note _note = new Note(noteData.s - 0.25f, _travelingTime, _index);
+            notes[_index].Add(_note);
 
-        // 軌道
-        GenerateTrackLine(_chartData.track, 0f);
+            // 功能 Note 物件 (Mono)
+            GameObject _noteObj = null;
+            NoteType _type = (NoteType)noteData.i;
+            if (_type == NoteType.Tap)
+            {
+                // 物件實例化
+                _noteObj = Instantiate(NoteTapPref, _spawnPos, Quaternion.identity, this.transform);
+                _noteObj.transform.rotation = Quaternion.Euler(0f, 0f, _angleRad * Mathf.Rad2Deg);
+                _noteObj.transform.parent = NoteContainer.transform;
 
-        // 判定線
-        GenerateDetectLine(_chartData.track, 0f);
+                // 組件程式初始化
+                NoteTap _noteTap = _noteObj.GetComponent<NoteTap>();
+                _noteTap.Initialize(_note, _dir, SpawnRadius, Radius);
+                _note.NoteObject = _noteTap;
+            }
+            else if(_type == NoteType.Hold)
+            {
+                // Hold 專屬設定
+                _note.HoldTime = noteData.p;
 
-        // 載入音樂
-        AudioClip audio = AudioManager.Instance.LoadClip(_chartData.path);
-        AudioManager.Instance.LoadBGM(audio);
+                // 物件實例化
+                _noteObj = Instantiate(NoteHoldPref, _spawnPos, Quaternion.identity, this.transform);
+                _noteObj.transform.rotation = Quaternion.Euler(0f, 0f, _angleRad * Mathf.Rad2Deg);
+                _noteObj.transform.parent = NoteContainer.transform;
+
+                // 組件程式初始化
+                NoteHold _noteHold = _noteObj.GetComponent<NoteHold>();
+                _noteHold.Initialize(_note, _dir, SpawnRadius, Radius);
+                _note.NoteObject = _noteHold;
+            }
+
+            // 處理遮罩層級
+            if (_noteObj != null)
+            {
+                if (noteData.t > 2)
+                {
+                    _noteObj.GetComponent<SpriteRenderer>().sortingOrder = -2;
+                }
+                else
+                {
+                    _noteObj.GetComponent<SpriteRenderer>().sortingOrder = -4;
+                }
+            }
+        }
+
+        // Sort Notes by StartTime (Small -> Big)
+        for (int i = 0; i < TrackCount; i++)
+        {
+            notes[i].Sort((a, b) => a.TargetTime.CompareTo(b.TargetTime));
+        }
     }
 
-    public void GameStart()
+    public void ClearAllNotes()
     {
-        GamePlay.UpdateScore(0);
-        AudioManager.Instance.PlayBGM();
-        State = LevelState.Playing;
-    }
+        foreach (Transform child in NoteContainer.transform)
+        {
+            Destroy(child.gameObject);
+        }
 
-    public void GameReStart()
-    {
-        Score = 0;
-        AudioManager.Instance.ResumeBgm();
-        ClearAllNotes();
-        SpawnNotes(_chartData.notes);
-        GameStart();
+        for (int i = 0; i < TrackCount; i++)
+        {
+            notes[i].Clear();
+        }
+
+        finishNotes.Clear();
     }
 
     public DetectLine GetDetectLine(int index)
     {
-        if(index <0 || index >= _detects.Count)
+        if(index <0 || index >= DetectLines.Count)
         {
             Debug.LogError("Index out of range.");
             return null;
         }
 
-        return _detects[index].GetComponent<DetectLine>();
+        return DetectLines[index].GetComponent<DetectLine>();
     }
-
-    public void ClearAllNotes()
-    {
-        // 只清除有 Note 組件的子物件
-        foreach (Transform child in transform)
-        {
-            if (child.GetComponent<NotePress>() != null)
-            {
-                Destroy(child.gameObject);
-            }
-        }
-    }
-
 
     public void ResetAllDetectLineColor(Color color)
     {
-        foreach (var d in _detects)
+        foreach (var d in DetectLines)
         {
             var dl = d.GetComponent<DetectLine>();
             if (dl != null)
@@ -231,7 +344,7 @@ public class Level : MonoBehaviour
 
     public void ColoReset(int detectLineIndex)
     {
-        if (detectLineIndex < 0 || detectLineIndex >= _detects.Count)
+        if (detectLineIndex < 0 || detectLineIndex >= DetectLines.Count)
         {
             Debug.LogError("detectLineIndex out of range.");
             return;
@@ -239,77 +352,34 @@ public class Level : MonoBehaviour
 
         ResetAllDetectLineColor(new Color(1f, 0f, 0f, 0.2f));
 
-        var dl = _detects[detectLineIndex].GetComponent<DetectLine>();
+        var dl = DetectLines[detectLineIndex].GetComponent<DetectLine>();
         if (dl != null)
         {
             dl.SetColor(new Color(0f, 0.5f, 1f, 1f));
         }
     }
 
-    public void ResetTrackLine()
+    public void SetTimeOffset(float offset)
     {
-        foreach (var t in _tracks)
+        if(offset < -3f || offset > 3f)
         {
-            Destroy(t);
+            return;
+        }
+
+        cusTimeOffset = offset;
+
+        // 立即更新所有 Note
+        foreach (var trackNote in notes)
+        {
+            foreach (var note in trackNote)
+            {
+                note.OffsetTime = cusTimeOffset;
+            }
         }
     }
 
-    public void ResetDetectLine()
+    public float GetTimeOffset()
     {
-        foreach (var d in _detects)
-        {
-            Destroy(d);
-        }
-    }
-
-    public void GenerateTrackLine(int count, float off_r)
-    {
-        if (TrackLinePref == null)
-        {
-            Debug.LogError("TrackLinePref shouldn't be null.");
-            return;
-        }
-
-        if (count < 3)
-        {
-            Debug.LogError("Count must be >= 3");
-            return;
-        }
-
-        float _rotationStep = 360f / count;
-        for (int i = 0; i < count; i++)
-        {
-            GameObject _trackLine = GameObject.Instantiate(TrackLinePref, new Vector3(0f, 0f, 0f), Quaternion.Euler(0f, 0f, off_r + 90f + i * _rotationStep));
-            _trackLine.name = "track_" + i.ToString();
-            _tracks.Add(_trackLine);
-        }
-    }
-
-    public void GenerateDetectLine(int count, float off_r)
-    {
-        if (DetectLinePref == null)
-        {
-            Debug.LogError("DetectLinePref shouldn't be null.");
-            return;
-        }
-
-        if (count < 3)
-        {
-            Debug.LogError("Count must be >= 3");
-            return;
-        }
-
-        float _rotationStep = 360f / count;
-        float _length = 2f * Radius * Mathf.Tan(Mathf.PI / count) * Scale;
-        for (int i = 0; i < count; i++)
-        {
-            GameObject _detectLine = GameObject.Instantiate(DetectLinePref, new Vector3(0f, 0f, 0f), Quaternion.Euler(0f, 0f, off_r + 90f + (i + 0.5f) * _rotationStep));
-            _detectLine.name = "detect_" + i.ToString();
-
-            DetectLine _dl = _detectLine.GetComponent<DetectLine>();
-            _dl.SetLength(_length);
-            _dl.SetRadius(Radius);
-            _detects.Add(_detectLine);
-        }
+        return cusTimeOffset;   
     }
 }
