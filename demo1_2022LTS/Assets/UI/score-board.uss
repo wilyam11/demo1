@@ -1,0 +1,33 @@
+.Panel {
+    background-color: rgb(14, 126, 255);
+    opacity: 0.73;
+}
+
+.unity-button {
+    -unity-font: url("project://database/Assets/Assets/Fonts/Montserrat-VariableFont_wght.ttf?fileID=12800000&guid=b58f2571fa87b664089d771dee16abf5&type=3#Montserrat-VariableFont_wght");
+    -unity-font-definition: initial;
+    font-size: 30%;
+}
+
+.unity-text-element {
+    font-size: 30%;
+}
+
+.Buttom {
+    font-size: 300%;
+    -unity-font: url("project://database/Assets/Assets/Fonts/Montserrat-VariableFont_wght.ttf?fileID=12800000&guid=b58f2571fa87b664089d771dee16abf5&type=3#Montserrat-VariableFont_wght");
+    -unity-font-definition: initial;
+    width: 15%;
+    height: 7%;
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    opacity: 0.86;
+}
+
+.container {
+    background-color: rgba(255, 255, 255, 0);
+    opacity: 1;
+    align-self: center;
+    width: 40%;
+    height: 50%;
+}
