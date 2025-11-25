@@ -1,0 +1,24 @@
+{
+  "title": "Take Me Home",
+  "artist": "GaviteHawk",
+  "path": "Take-Me-Home",
+  "track": 6,
+  "bpm": 150,
+  "notes": [
+    {
+      "s": 6.5,
+      "t": 0,
+      "i": 0
+    },
+    {
+      "s": 6.9,
+      "t": 1,
+      "i": 0
+    },
+    {
+      "s": 7.3,
+      "t": 2,
+      "i": 0
+    }
+  ]
+}

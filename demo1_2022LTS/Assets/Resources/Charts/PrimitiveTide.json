@@ -2,10 +2,8 @@
   "title": "We the Best Music",
   "artist": "DJ ...",
   "path": "PrimitiveTide",
+  "track": 6,
   "bpm": 151,
-  "speed": 5,
-  "start_time": 0.86,
-  "delay": 0,
   "notes": [
     {
       "x": 1.621,
