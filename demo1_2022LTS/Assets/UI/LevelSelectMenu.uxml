@@ -2,11 +2,16 @@
     <Style src="project://database/Assets/UI/levelSelectMenu.uss?fileID=7433441132597879392&amp;guid=6de54aaa63477e54ab388623b4757e9d&amp;type=3#levelSelectMenu" />
     <ui:VisualElement name="MainContainer" class="main-split-view">
         <ui:ScrollView name="SongListContainer" mode="Vertical" class="left-panel-list" />
-        <ui:VisualElement name="DetailsPanel" class="right-panel-details">
-            <ui:VisualElement name="LargeCoverArt" class="details-cover" />
-            <ui:Label text="Song Title" name="LargeTitle" class="details-title" style="-unity-font: url(&quot;project://database/Assets/Assets/Fonts/Montserrat-VariableFont_wght.ttf?fileID=12800000&amp;guid=b58f2571fa87b664089d771dee16abf5&amp;type=3#Montserrat-VariableFont_wght&quot;); -unity-font-definition: initial; -unity-font-style: bold;" />
-            <ui:Label text="High Score: 000000" name="HighScoreLabel" style="color: rgb(255, 255, 255); font-size: 20px; -unity-font: url(&quot;project://database/Assets/Assets/Fonts/Montserrat-VariableFont_wght.ttf?fileID=12800000&amp;guid=b58f2571fa87b664089d771dee16abf5&amp;type=3#Montserrat-VariableFont_wght&quot;); -unity-font-definition: initial; -unity-font-style: bold;" />
-            <ui:Button text="PLAY" name="PlayButton" class="play-btn unity-button" style="-unity-font: url(&quot;project://database/Assets/Assets/Fonts/Montserrat-VariableFont_wght.ttf?fileID=12800000&amp;guid=b58f2571fa87b664089d771dee16abf5&amp;type=3#Montserrat-VariableFont_wght&quot;); -unity-font-definition: initial; -unity-font-style: bold; transition-property: all; transition-duration: 0s; transition-timing-function: ease; transition-delay: 0s;" />
+        <ui:VisualElement name="DetailsPanel" class="right-panel-details" style="width: 300%; background-color: rgb(123, 123, 123);">
+            <ui:VisualElement name="DetailsContentContainer" class="details-content-container">
+                <ui:VisualElement name="LargeCoverArt" class="details-cover" />
+                <ui:Label text="Song Title" name="LargeTitle" class="details-title" style="-unity-font: url(&quot;project://database/Assets/Assets/Fonts/Montserrat-VariableFont_wght.ttf?fileID=12800000&amp;guid=b58f2571fa87b664089d771dee16abf5&amp;type=3#Montserrat-VariableFont_wght&quot;); -unity-font-definition: initial;" />
+                <ui:Label text="High Score: 000000" name="HighScoreLabel" style="-unity-font: url(&quot;project://database/Assets/Assets/Fonts/Montserrat-VariableFont_wght.ttf?fileID=12800000&amp;guid=b58f2571fa87b664089d771dee16abf5&amp;type=3#Montserrat-VariableFont_wght&quot;); -unity-font-definition: initial; -unity-font-style: bold;" />
+                <ui:Button text="PLAY" name="PlayButton" class="play-btn" style="align-self: center; -unity-font: url(&quot;project://database/Assets/Assets/Fonts/Montserrat-VariableFont_wght.ttf?fileID=12800000&amp;guid=b58f2571fa87b664089d771dee16abf5&amp;type=3#Montserrat-VariableFont_wght&quot;); -unity-font-definition: initial; -unity-font-style: bold; font-size: 30px;" />
+            </ui:VisualElement>
+            <ui:VisualElement name="EmptyStateContainer" class="empty-state-overlay hide" style="position: absolute; left: 0; top: -2px; right: 0; bottom: 3px; background-image: none; font-size: 100px; background-color: rgb(11, 34, 141);">
+                <ui:Label text="SELECT A TRACK" class="empty-state-text" style="-unity-font: url(&quot;project://database/Assets/Assets/Fonts/Montserrat-VariableFont_wght.ttf?fileID=12800000&amp;guid=b58f2571fa87b664089d771dee16abf5&amp;type=3#Montserrat-VariableFont_wght&quot;); -unity-font-definition: initial; -unity-font-style: bold; align-self: stretch; -unity-text-align: upper-center; background-color: rgba(255, 255, 255, 0); color: rgb(255, 255, 255);" />
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5a7a13ffcfc7dc04b97d40f63585ba9b, type: 3}
   m_Name: song2
   m_EditorClassIdentifier: 
-  songTitle: 
-  artistName: 
-  coverArt: {fileID: 0}
+  songTitle: Song2
+  artistName: LeBron
+  coverArt: {fileID: 21300000, guid: 45f58becbbde80f4abe2dca267e952cb, type: 3}
   bpm: 0
   fullTrack: {fileID: 0}
   previewClip: {fileID: 0}
   difficultyRating: 0
-  highScore: 
-  rank: 
+  highScore: 0
+  rank: '-'

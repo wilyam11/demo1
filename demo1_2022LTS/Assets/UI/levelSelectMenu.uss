@@ -48,3 +48,13 @@
 .play-btn:hover {
     background-color: rgb(219, 216, 133);
 }
+
+.song-card-selected {
+    background-color: white;
+    border-left-color: rgb(255, 255, 0);
+    color: black;
+}
+
+.hide {
+    display: none;
+}

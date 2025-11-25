@@ -133,6 +133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 85576407}
   - component: {fileID: 85576406}
+  - component: {fileID: 85576408}
   m_Layer: 5
   m_Name: UIDocument
   m_TagString: Untagged
@@ -171,6 +172,25 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &85576408
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85576405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 264b3bb7283143041b5c71d8f692ee95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _allSongs:
+  - {fileID: 11400000, guid: ff88190b15d84464ea027e00d85072e4, type: 2}
+  - {fileID: 11400000, guid: a4c484d5ee6e8f44f8db0c2d2a5217a6, type: 2}
+  - {fileID: 11400000, guid: c238edc0c5a560f4ca286c0e0ae33139, type: 2}
+  - {fileID: 11400000, guid: 7e31ef5125b59474b902321604b6aaa1, type: 2}
+  - {fileID: 11400000, guid: dda930b0db8f7b646b6834205cee88ea, type: 2}
+  _songCardTemplate: {fileID: 9197481963319205126, guid: 678a98ec195e5a846bb2e5ff98ccb9ed, type: 3}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
