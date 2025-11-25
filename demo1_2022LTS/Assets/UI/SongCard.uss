@@ -1,0 +1,23 @@
+/* The container for a single song row */
+.song-card {
+    height: 120px;
+    margin-bottom: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border-left-width: 10px;
+    border-left-color: #00FFFF; /* Cyan Neon */
+    flex-direction: row; /* Align image and text side-by-side */
+    transition-duration: 0.2s; /* Smooth animation for hover */
+}
+
+/* The Hover Effect - Crucial for game feel */
+.song-card:hover {
+    scale: 1.05;
+    background-color: rgba(50, 50, 50, 1);
+    border-left-color: #FF00FF; /* Change to Magenta on hover */
+}
+
+.title-text {
+    font-size: 32px;
+    color: white;
+    -unity-font-style: bold;
+}
